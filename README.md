@@ -1,7 +1,7 @@
 # Unilidar SDK2
 > [!IMPORTANT]
 > This package is a fork of the official one.
-> Please see the official package for details.  
+> Please check the official package for details.  
 > [unilidar_sdk2](https://github.com/unitreerobotics/unilidar_sdk2)
 
 ## 1. Introduction
