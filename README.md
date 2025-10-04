@@ -1,6 +1,8 @@
 # Unilidar SDK2
-
-[中文版 | Chinese](./README_CN.md)
+> [IMPORTANT]
+> This package is a fork of the official one.
+> Please see the official package for details.  
+> [unilidar_sdk2](https://github.com/unitreerobotics/unilidar_sdk2)
 
 ## 1. Introduction
 
@@ -37,22 +39,60 @@ T_{LI} =
 \end{bmatrix}
 $$
 
-## 3. C++ SDK
-
-### 3.1 Compilation
-
-You can compile the sample programs of this project according to the standard compilation method of cmake projects:
+## 3. Setup
+### 3.1 Get Unilidar SDK
 ```bash
-cd unitree_lidar_sdk
+cd ros2_ws/src
+git clone https://github.com/iHaruruki/unilidar_sdk2.git
+cd unilidar_sdk2
+```
+### 3.2 Setting up a UDP (Ethernet) connection
+#### 3.2.1 Verifying the Network Configuration
+Set the local IP so that you can connect to the LiDAR's default IP (192.168.1.62).
+```bash
+ip addr show
 
-mkdir build
+ping -c 3 192.168.1.62
+```
+#### 3.2.2 Modify the file for UDP connection
+`unilidar_sdk2/unitree_lidar_sdk/examples/example_lidar_udp.cpp`
+```bash
+// Before modification
+std::string local_ip = "192.168.1.2";
+unsigned short local_port = 6201;
 
-cd build
-
+// After modification (adjusted to your environment)
+std::string local_ip = "192.168.1.3"; // Change to the actual local IP
+unsigned short local_port = 6202; // Avoid port conflicts
+```
+`unilidar_sdk2/unitree_lidar_ros2/src/unitree_lidar_ros2/launch/launch.py`
+```python
+# UDP connection settings
+def generate_launch_description():
+	node1 = Node(
+		parameters= [
+			{'initialize_type': 2}, # UDP communication
+			{'local_ip': '192.168.1.3'}, # Change to actual local IP
+			{'local_port': 6203}, # Avoid port conflicts
+		]
+	)
+```
+### 3.3 Build
+#### C++ SDK
+```bash
+cd unilidar_sdk2/unitree_lidar_sdk/build
 cmake .. && make -j2
 ```
+#### ROS 2 pkg
+```bash
+cd unilidar_sdk2/unitree_lidar_ros2
+colcon build
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+```
 
-### 3.2 Configuring Work Mode
+## 4. C++ SDK
+### 4.1 Configuring Work Mode
 The LiDAR can be configured in various working modes by default, including standard FOV or wide-angle FOV, 3D mode or 2D mode, IMU enabled or disabled, Ethernet or serial connection, etc.
 
 We can configure the working mode through the host computer, or we can also configure the working mode through the following interface in `unitree_lidar_sdk.h`:
@@ -77,7 +117,7 @@ The common usage mode is standard FOV + 3D measurement + enable IMU + power on s
 
 The default factory lidar work mode is 0, i.e., Ethernet communication mode.
 
-### 3.3 Running with Ethernet
+### 4.2 Running with Ethernet
 
 The sample program for running the LiDAR with Ethernet connection is: `example_lidar_udp.cpp`.
 
@@ -134,7 +174,7 @@ A Cloud msg is parsed!
 
 If you need to modify the default IP address of the LiDAR, you can refer to the user manual to use our host computer to make the changes.
 
-### 3.4 Running with Serial Port
+### 4.3 Running with Serial Port
 
 Note that the LiDAR is shipped with Ethernet communication mode by default. If you have not yet switched the communication mode to serial communication mode, you will need to use an Ethernet connection to communicate with the LiDAR first, so that you can then switch its communication method to serial communication mode. You can use our host computer to make the switch, or you can also refer to section [4.2], use the default Ethernet communication example program `example_lidar_udp.cpp` to communicate with the lidar first, and set the lidar work mode to serial communication mode (`workMode=8`), then power off and restart the LiDAR.
 
@@ -191,61 +231,6 @@ A Cloud msg is parsed!
 	  ...
 ```
 
-
-## 4. How to Use the ROS Package
-
-### 4.1 Dependencies
-Dependencies include `PCL` and `ROS`.
-
-We have verified that this package can successfully run in the following environment:
-- `Ubuntu 20.04`
-- `ROS noetic`
-- `PCL-1.10`
-- `unitree_lidar_sdk`
-
-It is recommended that you configure an environment like this to run the package.
-
-### 4.2 Configuration
-
-The default communication method for the LiDAR is Ethernet mode. If you need to modify the working mode, you need to change the corresponding parameters in the configuration file. The path to the configuration file is:
-```
-unitree_lidar_ros/src/unitree_lidar_ros/config/config.yaml
-```
-
-If you have special needs, such as changing the cloud topic name or IMU topic name, you can also configure them in the configuration file.
-
-The default cloud topic and its coordinate system name are:
-- Topic name: "unilidar/cloud"
-- Coordinate system: "unilidar_lidar"
-
-The default IMU topic and its coordinate system name are:
-- Topic name: "unilidar/imu"
-- Coordinate system: "unilidar_imu"
-
-### 4.3 Compilation
-
-Compile:
-
-```
-cd unitree_lidar_ros
-
-catkin_make
-```
-
-### 4.4 Running
-
-Run:
-
-```
-source devel/setup.bash
-
-roslaunch unitree_lidar_ros run.launch
-```
-
-In the Rviz window, you will see our LiDAR point cloud as follows:
-
-![img](./docs/ros1_cloud.png)
-
 ## 5. How to Use the ROS2 Package
 
 ### 5.1 Dependencies
@@ -277,17 +262,7 @@ The default IMU topic and its coordinate system name are:
 - Topic name: "unilidar/imu"
 - Coordinate system: "unilidar_imu"
 
-### 5.3 Compilation
-
-Compile:
-
-```bash
-cd unilidar_sdk/unitree_lidar_ros2
-
-colcon build
-```
-
-### 5.4 Running
+### 5.3 Running
 
 Run:
 
