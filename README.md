@@ -1,5 +1,5 @@
 # Unilidar SDK2
-> [IMPORTANT]
+> [!IMPORTANT]
 > This package is a fork of the official one.
 > Please see the official package for details.  
 > [unilidar_sdk2](https://github.com/unitreerobotics/unilidar_sdk2)
@@ -121,12 +121,7 @@ The default factory lidar work mode is 0, i.e., Ethernet communication mode.
 
 The sample program for running the LiDAR with Ethernet connection is: `example_lidar_udp.cpp`.
 
-First, connect your LiDAR to the computer with an Ethernet cable, then confirm that the corresponding network card of your computer is configured to the default target IP address of the LiDAR:
-```bash
-192.168.1.2
-```
-
-Then, run the sample program:
+Run run the sample program:
 ```bash
 ../bin/example_lidar_udp
 ```
@@ -244,6 +239,10 @@ We have verified that this package can successfully run in the following environ
 - `unitree_lidar_sdk`
 
 It is recommended that you configure an environment like this to run the package.
+> [!TIP]
+> Operation confirmed  
+> `Ubuntu 22.04`  
+> `ROS 2 Humble`
 
 ### 5.2 Configuration
 
