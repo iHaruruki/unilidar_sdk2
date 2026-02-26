@@ -54,7 +54,10 @@ def generate_launch_description():
         name='complementary_filter_node',
         output='screen',
         parameters= [
+            {'gain_acc': 0.1},
             {'bias_alpha': 0.01},
+            {'do_bias_estimation': True},
+            {'do_adaptive_gain': True},
             {'use_mag': False},
             {'fixed_frame': "unilidar_imu_initial"},
             {'publish_tf': True},
