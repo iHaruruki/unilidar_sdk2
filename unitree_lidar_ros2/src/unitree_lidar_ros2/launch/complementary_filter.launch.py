@@ -30,13 +30,25 @@ def generate_launch_description():
             
             {'cloud_frame': "unilidar_lidar"},
             {'cloud_topic': "unilidar/cloud"},
-            #{'imu_frame': "unilidar_imu"},
-            {'imu_topic': "imu/data_raw"},
+            {'imu_frame': "unilidar_imu"},
+            {'imu_topic': "unilidar/imu"},
+        ],
+    )
+
+    #
+    imu_strip = Node(
+        package='unitree_lidar_ros2',
+        executable='imu_strip_orientation_node',
+        name='imu_strip_orientation',
+        output='screen',
+        parameters=[
+            {'input_topic': '/unilidar/imu'},
+            {'output_topic': '/imu/data_raw_stripped'},
         ],
     )
 
     # imu_complementary_filter
-    filter_node = Node(
+    complementary_filter_node = Node(
         package='imu_complementary_filter',
         executable='complementary_filter_node',
         name='complementary_filter_node',
@@ -47,7 +59,10 @@ def generate_launch_description():
             {'fixed_frame': "unilidar_imu_initial"},
             {'publish_tf': True},
             {'publish_debug_topics': True},
-        ]
+        ],
+        remappings=[
+            ('/imu/data_raw', '/imu/data_raw_stripped'),
+        ],
     )
 
     # Run Rviz
@@ -61,4 +76,4 @@ def generate_launch_description():
         arguments=['-d', rviz_config_file],
         output='log'
     )
-    return LaunchDescription([node1, filter_node, rviz_node])
+    return LaunchDescription([node1, imu_strip, complementary_filter_node, rviz_node])

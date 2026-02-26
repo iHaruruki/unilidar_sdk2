@@ -39,6 +39,9 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_executable(unitree_lidar_ros2_node src/unitree_lidar_ros2_node.cpp)
 
+add_executable(imu_strip_orientation_node src/imu_strip_orientation.cpp)
+ament_target_dependencies(imu_strip_orientation_node rclcpp sensor_msgs)
+
 target_link_libraries( unitree_lidar_ros2_node
   ${Boost_SYSTEM_LIBRARY}
   ${PCL_LIBRARIES}
@@ -55,7 +58,7 @@ ament_target_dependencies(
 )
 
 install(TARGETS
-unitree_lidar_ros2_node
+unitree_lidar_ros2_node imu_strip_orientation_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
