@@ -32,6 +32,8 @@ def generate_launch_description():
             {'cloud_topic': "unilidar/cloud"},
             {'imu_frame': "unilidar_imu"},
             {'imu_topic': "unilidar/imu"},
+            {'publish_imu_initial_tf': False},
+            {'publish_imu_to_lidar_tf': True},
         ],
     )
 
