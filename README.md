@@ -301,6 +301,56 @@ In the Rviz window, you will see our LiDAR point cloud as follows:
 
 ![img](./docs/ros2_cloud.png)
 
+### 5.5 Correcting IMU Drift with a Complementary Filter
+
+#### Background
+
+The orientation estimate published by the LiDAR's built-in IMU is computed on-chip from a gyroscope integration. Because any small bias in the gyroscope accumulates over time, the orientation slowly drifts even when the sensor is stationary. To suppress this drift, we fuse the gyroscope output with the accelerometer output using a **complementary filter**: the low-frequency component of orientation is derived from the accelerometer (gravity vector), while the high-frequency component comes from the gyroscope. The result is a stable, drift-free orientation estimate.
+
+#### Implementation
+
+Two additional nodes are provided to achieve this:
+
+1. **`imu_strip_orientation_node`** (`src/imu_strip_orientation.cpp`)  
+   Subscribes to the raw IMU topic (`/unilidar/imu`) and republishes the same message with the on-chip orientation invalidated (covariance `[0] = -1`, quaternion set to identity). This stripped message (`/imu/data_raw_stripped`) is then fed to the complementary filter, which estimates orientation from scratch using only the accelerometer and gyroscope data.
+
+2. **`complementary_filter_node`** (external package `imu_complementary_filter`)  
+   Takes the stripped IMU data and outputs a corrected orientation. The filter parameters can be tuned in `launch/complementary_filter.launch.py`:
+
+   | Parameter | Default | Description |
+   |---|---|---|
+   | `gain_acc` | `0.1` | Accelerometer gain (higher = more trust in accel) |
+   | `bias_alpha` | `0.01` | Gyroscope bias estimation smoothing factor |
+   | `do_bias_estimation` | `true` | Enable gyroscope bias estimation |
+   | `do_adaptive_gain` | `true` | Adapt accelerometer gain based on movement |
+   | `use_mag` | `false` | Use magnetometer (not available on this sensor) |
+   | `publish_tf` | `true` | Publish corrected orientation as a TF transform |
+
+#### Additional Dependency
+
+Install the `imu_tools` package which provides `imu_complementary_filter`:
+
+```bash
+sudo apt install ros-${ROS_DISTRO}-imu-tools
+```
+
+#### Running with the Complementary Filter
+
+Use the dedicated launch file instead of the default one:
+
+```bash
+source install/setup.bash
+
+ros2 launch unitree_lidar_ros2 complementary_filter.launch.py
+```
+
+This starts three nodes:
+- `unitree_lidar_ros2_node` — publishes raw point cloud and IMU data
+- `imu_strip_orientation_node` — strips the on-chip orientation from the IMU message
+- `complementary_filter_node` — estimates drift-corrected orientation from gyro and accel
+
+The corrected orientation is published on `/imu/data` and as a TF transform from `unilidar_imu_initial` to the filter's output frame.
+
 ## 6. How to Parse Raw Data Packets
 
 If you wish to parse the raw Ethernet or serial port data to obtain point cloud and IMU data, you can refer to our custom communication protocol for parsing.
