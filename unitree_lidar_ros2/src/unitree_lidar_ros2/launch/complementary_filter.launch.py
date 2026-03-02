@@ -56,7 +56,7 @@ def generate_launch_description():
         name='complementary_filter_node',
         output='screen',
         parameters= [
-            {'gain_acc': 0.1},
+            {'gain_acc': 0.01},
             {'bias_alpha': 0.01},
             {'do_bias_estimation': True},
             {'do_adaptive_gain': True},
