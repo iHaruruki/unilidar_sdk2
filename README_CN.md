@@ -297,6 +297,56 @@ ros2 launch unitree_lidar_ros2 launch.py
 
 ![img](./docs/ros2_cloud.png)
 
+### 5.5 使用相补滤波器修正IMU漂移
+
+#### 背景
+
+激光雷达内置IMU输出的姿态估计是通过片上陀螺仪积分计算得到的。由于陀螺仪存在微小偏置，该偏置会随时间积累，导致即使传感器静止不动，姿态估计也会缓慢漂移。为了抑制这种漂移，我们使用**相补滤波器**将陀螺仪输出与加速度计输出进行融合：姿态的低频分量由加速度计（重力向量）提供，高频分量则来自陀螺仪。这样可以得到稳定、无漂移的姿态估计。
+
+#### 实现说明
+
+为实现上述功能，提供了两个附加节点：
+
+1. **`imu_strip_orientation_node`**（`src/imu_strip_orientation.cpp`）  
+   订阅原始IMU话题（`/unilidar/imu`），并重新发布同样的消息，但将片上姿态置为无效（协方差 `[0] = -1`，四元数设为单位四元数）。该剥离后的消息（`/imu/data_raw_stripped`）随后被输入相补滤波器，由滤波器仅依据加速度计和陀螺仪数据重新估计姿态。
+
+2. **`complementary_filter_node`**（外部包 `imu_complementary_filter`）  
+   接收剥离姿态后的IMU数据，输出经过修正的姿态。可在 `launch/complementary_filter.launch.py` 中调整滤波器参数：
+
+   | 参数 | 默认值 | 说明 |
+   |---|---|---|
+   | `gain_acc` | `0.1` | 加速度计增益（越大表示对加速度计越信任） |
+   | `bias_alpha` | `0.01` | 陀螺仪偏置估计平滑系数 |
+   | `do_bias_estimation` | `true` | 是否开启陀螺仪偏置估计 |
+   | `do_adaptive_gain` | `true` | 是否根据运动状态自适应调整加速度计增益 |
+   | `use_mag` | `false` | 是否使用磁力计（本传感器不支持） |
+   | `publish_tf` | `true` | 是否将修正后的姿态发布为TF变换 |
+
+#### 额外依赖
+
+安装提供 `imu_complementary_filter` 的 `imu_tools` 包：
+
+```bash
+sudo apt install ros-${ROS_DISTRO}-imu-tools
+```
+
+#### 使用相补滤波器运行
+
+使用专用的启动文件代替默认文件：
+
+```bash
+source install/setup.bash
+
+ros2 launch unitree_lidar_ros2 complementary_filter.launch.py
+```
+
+该命令将启动三个节点：
+- `unitree_lidar_ros2_node` — 发布原始点云和IMU数据
+- `imu_strip_orientation_node` — 从IMU消息中剥离片上姿态
+- `complementary_filter_node` — 由陀螺仪和加速度计估计无漂移姿态
+
+修正后的姿态将发布在 `/imu/data` 话题，同时作为从 `unilidar_imu_initial` 到滤波器输出坐标系的TF变换发布。
+
 ## 6. 如何解析原始数据包
 
 如果您希望自己解析原始的网口数据或者串口数据以得到点云和IMU等数据，您可以参考我们自定义的通信协议进行解析。
