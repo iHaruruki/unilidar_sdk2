@@ -3,8 +3,23 @@ import subprocess
 
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import GroupAction, DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
+
+    complementary_args = [
+        DeclareLaunchArgument("cf_publish_tf", default_value="true"),
+        DeclareLaunchArgument("cf_use_mag", default_value="false"),
+        DeclareLaunchArgument("cf_bias_alpha", default_value="0.01"),
+        DeclareLaunchArgument("cf_gain_acc", default_value="0.01"),
+        DeclareLaunchArgument("cf_gain_mag", default_value="0.01"),
+    ]
+    cf_parameters = [{arg.name: LaunchConfiguration(arg.name)} for arg in complementary_args]
+
     # Run unitree lidar
     node1 = Node(
         package='unitree_lidar_ros2',
@@ -37,6 +52,17 @@ def generate_launch_description():
                 ]
     )
 
+    imu_iomp_node = Node(
+        package='imu_complementary_filter',
+        executable='complementary_filter_node',
+        name='complementary_filter_node',
+        parameters=cf_parameters,
+        remappings=[
+            ('/imu/data_raw', '/unilidar/imu')
+        ],
+        output='screen',
+    )
+
     # Run Rviz
     package_path = subprocess.check_output(['ros2', 'pkg', 'prefix', 'unitree_lidar_ros2']).decode('utf-8').rstrip()
     rviz_config_file = os.path.join(package_path, 'share', 'unitree_lidar_ros2', 'view.rviz')
@@ -48,4 +74,9 @@ def generate_launch_description():
         arguments=['-d', rviz_config_file],
         output='log'
     )
-    return LaunchDescription([node1, rviz_node])
+    return LaunchDescription(
+        complementary_args + [
+        node1,
+        imu_iomp_node,
+        rviz_node
+    ])
